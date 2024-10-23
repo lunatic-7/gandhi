@@ -1,0 +1,45 @@
+const speak = (text) => {
+
+    if (!window.speechSynthesis) {
+      console.error("SpeechSynthesis API is not supported in this browser.");
+      return;
+    }
+
+    if (typeof text !== 'string' || text.trim() === '') {
+      console.error("Invalid text provided for speech synthesis.");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const voices = window.speechSynthesis.getVoices();
+    const indianVoice = voices.find(voice => voice.name === 'Google हिन्दी');
+    const selectedVoice = indianVoice || voices[0];
+
+    const chunkSize = 150;
+    const chunks = text.match(new RegExp(`.{1,${chunkSize}}(\\s|$)`, 'g'));
+
+    const speakChunk = (textChunk) => {
+      return new Promise((resolve, reject) => {
+        const utterance = new SpeechSynthesisUtterance(textChunk);
+        utterance.voice = selectedVoice;
+
+        utterance.onend = () => resolve();
+        utterance.onerror = (event) => reject(event);
+
+        window.speechSynthesis.speak(utterance);
+      });
+    };
+
+    const speakChunks = async () => {
+      for (const chunk of chunks) {
+        try {
+          await speakChunk(chunk);
+        } catch (error) {
+          console.error("Speech synthesis error:", error);
+          break;
+        }
+      }
+    };
+
+    speakChunks();
+  };
